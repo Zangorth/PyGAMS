@@ -9,11 +9,30 @@ os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
 
 import rng
 
+########################
+# Passthrough Pipeline #
+########################
+class PassPipe():
+    '''
+    Description - Passthrough pipeline that returns the same dataframe it was fed
+    
+    Arguments:
+        None
+    '''
+    def __init__(self):
+        return None
+    
+    def fit(self, df):
+        return None
+    
+    def transform(self, df):
+        return df
+
+
 ##################
 # Pipeline Adder #
 ##################
-# Descsription - Defines the search space for a model or pipeline object in GAMS
-class GAMS_Space():
+class Space():
     '''
     Description - Defines the search space for a model or pipeline object in GAMS
     
@@ -82,6 +101,8 @@ class GAMS_Space():
             
         self.generators[parameter] = generator
         
+        return None
+        
     def Category(self, parameter: str, choices: list, p=None):
         '''
         Description - Creates a search space for categorical parameters
@@ -96,6 +117,8 @@ class GAMS_Space():
             return random.choice(choices, p=p)
         
         self.generators[parameter] = generator
+        
+        return None
             
 
 
@@ -112,7 +135,7 @@ class GAMS():
 def Pipeline(df):
     return df
 
-pipe = GAMS_Space(Pipeline)
+pipe = Space(Pipeline)
 pipe.Integer('years', 1, 7)
 pipe.Real('lr', 1, 100, 'log-uniform')
 pipe.Category('Bucket', ['Current', '1-30', '31+'], [0.5, 0.25, 0.25])
