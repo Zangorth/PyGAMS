@@ -2,7 +2,7 @@
 # Imports #
 ###########
 from scipy.stats import loguniform
-from numpy import random
+from numpy import random, arange
 import os
 
 os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
@@ -49,7 +49,7 @@ class Space():
 
     def Integer(self, parameter: str, low: int, high: int, distribution='uniform'):
         '''
-        Description - Creates a search space for integer parameters
+        Description - Creates a search space that returns an integer
         
         Arguments:
             parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
@@ -77,7 +77,7 @@ class Space():
         
     def Real(self, parameter: str, low: float, high: float, distribution='uniform'):
         '''
-        Description - Creates a search space for real valued parameters
+        Description - Creates a search space that returns a real valued number
         
         Arguments:
             parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
@@ -105,7 +105,7 @@ class Space():
         
     def Category(self, parameter: str, choices: list, p=None):
         '''
-        Description - Creates a search space for categorical parameters
+        Description - Creates a search space that returns a category
         
         Arguments:
             parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
@@ -119,23 +119,31 @@ class Space():
         self.generators[parameter] = generator
         
         return None
-            
-
-
-########
-# GAMS #
-########
-class GAMS():
-    def __init__(self, pipes=[], models=[]):
-        self.pipes, self.models = pipes, models
-        
-        return None
-        
     
-def Pipeline(df):
-    return df
-
-pipe = Space(Pipeline)
-pipe.Integer('years', 1, 7)
-pipe.Real('lr', 1, 100, 'log-uniform')
-pipe.Category('Bucket', ['Current', '1-30', '31+'], [0.5, 0.25, 0.25])
+    def Categories(self, parameter: str, choices: list, n=None, low=None, high=None, p=None):
+        '''
+        Description - Creates a search space that returns a list of categories
+        
+        Arguments:
+            parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
+            choices      - A list of options that define the search space for this parameter
+            n            - The number of items to be chosen from the list of choices
+            low/high     - The lower and upper bounds (inclusive) on the number of items to be chosen from the list
+                           For example, low=2, high=10 will return between 2 and 10 items from the list, with every
+                           number between 2 and 10 being equally likely to be chosen
+            p            - A list of probability (0, 1) corresponding to the initial likelihood of choosing each option
+        '''
+        def generator():
+            if n is not None:
+                size = n
+                
+            elif low is not None and high is not None:
+                size = random.choice(arange(low, high+1))
+                
+            else:
+                print('Either n or both high and low must be specified')
+                return None
+            
+            return list(random.choice(choices, size=size, p=p))
+        
+        self.generators[parameter] = generator
