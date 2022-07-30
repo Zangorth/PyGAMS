@@ -147,3 +147,8 @@ class Space():
             return list(random.choice(choices, size=size, p=p))
         
         self.generators[parameter] = generator
+
+    def generate(self):
+        output = {key: self.generators[key]() for key in self.generators.keys()}
+        
+        return output
