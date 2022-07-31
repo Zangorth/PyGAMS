@@ -41,8 +41,10 @@ class Space():
                        Pipelines should have a fit and transform method
                        Models should have a fit and predict method
     '''
-    def __init__(self, space_object):
+    def __init__(self, space_object, name=None):
         self.space_object = space_object
+        self.name = name
+        self.types = {}
         self.generators = {}
         
         return None
@@ -70,7 +72,8 @@ class Space():
         elif distribution == 'exponential-decay':
             def generator():
                 return rng.exp_int(low, high)
-            
+        
+        self.types[parameter] = int
         self.generators[parameter] = generator
         
         return None
@@ -98,7 +101,8 @@ class Space():
         elif distribution == 'exponential-decay':
             def generator():
                 return rng.exp_real(low, high)
-            
+        
+        self.types[parameter] = float
         self.generators[parameter] = generator
         
         return None
@@ -116,6 +120,7 @@ class Space():
         def generator():
             return random.choice(choices, p=p)
         
+        self.types[parameter] = 'cat'
         self.generators[parameter] = generator
         
         return None
@@ -146,6 +151,7 @@ class Space():
             
             return list(random.choice(choices, size=size, p=p))
         
+        self.types[parameter] = 'cats'
         self.generators[parameter] = generator
 
     def generate(self):
