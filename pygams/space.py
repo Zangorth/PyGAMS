@@ -149,7 +149,7 @@ class Space():
                 print('Either n or both high and low must be specified')
                 return None
             
-            return list(random.choice(choices, size=size, p=p))
+            return list(random.choice(choices, size=size, p=p, replace=False))
         
         self.types[parameter] = 'cats'
         self.generators[parameter] = generator
