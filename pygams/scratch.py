@@ -8,6 +8,7 @@ import os
 
 os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
 
+from pygams import PyGAMS
 from space import Space
 
 #################
@@ -35,11 +36,6 @@ class FeaturePipeline():
     
     def transform(self, df):
         return df[self.features]
-    
-    
-#
-# 
-#
 
 pipes = Space(FeaturePipeline)
 pipes.Categories(parameter='features', 
@@ -57,9 +53,7 @@ et.Integer('n_estimators', low=10, high=1000, distribution='exponential-decay')
 et.Category('max_features', choices=['sqrt', 'log2'])
 et.Real('min_impurity_decrease', low=0.0001, high=1, distribution='log-uniform')
 
-models = [rf, et]
-population_size = 100
-survivors = 10
-
+gams = PyGAMS(models=[rf, et], pipes=pipes, generations=2)
+model_selection = gams.run(x, y)
 
 

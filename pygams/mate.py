@@ -9,7 +9,27 @@ import numpy as np
 #############
 # Survivors #
 #############
-def rescuer(fitness, population, survivors):
+def rescuer(fitness: list, population: list, survivors: int):
+    '''
+    Description - Saves the top performing creatures in the population to inject 
+                  into the next generation
+    
+    Parameters
+    ----------
+    fitness : list
+        List of values indicating how well the model performed, with higher numbers being better
+    population : list
+        List of dictionaries containing the parameters for training a GA model (see population_generator function)
+    survivors : int
+        Number of creatures from the population to save
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    '''
+    
     population = np.array(population)
     fitness = np.array(fitness)
     
@@ -18,7 +38,24 @@ def rescuer(fitness, population, survivors):
 #########################
 # Selection Probability #
 #########################
-def select_p(df, fit_col='fitness'):
+def select_p(df: pd.DataFrame, fit_col='fitness'):
+    '''
+    Description - Normalizes the fitness scores and ensures they sum to 1 to indicate 
+                  the probability the creature is selected to mate
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe including the fitness of each creature as well as its species and index number
+    fit_col : str, optional
+        The column to be normalized. The default is 'fitness'.
+
+    Returns
+    -------
+    p : pd.Series
+        Series of values indicating the probability that the creature will be selected to mate
+
+    '''
     normalized_fitness = MinMaxScaler().fit_transform(df[fit_col].to_numpy().reshape(-1, 1))
     p = normalized_fitness / normalized_fitness.sum()
     
@@ -27,13 +64,44 @@ def select_p(df, fit_col='fitness'):
 #################
 # Mate Selector #
 #################
-def mate_selector(df):
+def mate_selector(df: pd.DataFrame):
+    '''
+    Description - Takes as input a dataframe with a randomly selected (based on fitness) "dad" creature 
+                  and a list of potential mates and chooses a mate for that creature based upon the "mom" fitness
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe with list of "dad" creatures and potential mates
+
+    Returns
+    -------
+    np.array
+        The index for the selected mate
+
+    '''
     return np.random.choice(df['mom_index'], p=df['mom_p'])
 
 ########
 # Mate #
 ########
-def choose_parents(population, num_children):
+def choose_parents(population: list, num_children: int):
+    '''
+    Description - Takes the population and chooses creatures to mate based upon their fitness score
+
+    Parameters
+    ----------
+    population : list
+        List of dictionaries containing the parameters for training a GA model (see population_generator function)
+    num_children : int
+        Number of child creatures to be generated, or (in other words) number of parents to choose
+
+    Returns
+    -------
+    list
+        List of dictionaries indicating which creatures to pair off for mating
+
+    '''
     fitness_frame = pd.DataFrame({
         'index': np.arange(len(population)),
         'species': [creature['pipe_species'] + ' x ' + creature['model_species'] for creature in population],
@@ -71,7 +139,27 @@ def choose_parents(population, num_children):
 ###########
 # Breeder #
 ###########
-def breeder(mom, dad, param_set, mutation_rate):
+def breeder(mom: dict, dad: dict, param_set: str, mutation_rate: float):
+    '''
+    Description - Takes two models/pipelines and combines them to return a new model/pipeline
+
+    Parameters
+    ----------
+    mom : dict
+        The parameter set for the first creature
+    dad : dict
+        The parameter set for the second creature
+    param_set : str
+        Whether the set of parameters represents a model or a pipeline
+    mutation_rate : float
+        What percentage of the time to mutate the child creature
+
+    Returns
+    -------
+    child_params : dict
+        A dictionary of new parameters generated based on the parent models/pipelines
+
+    '''
     child_params = {}
     
     for param in dad[f'{param_set}_params'].keys():
@@ -101,7 +189,24 @@ def breeder(mom, dad, param_set, mutation_rate):
 #########
 # Breed #
 #########
-def breed(population, parents, mutation_rate):   
+def breed(population: list, parents: dict, mutation_rate: float):
+    '''
+    Description - Takes as input to parent creatures and returns a child creature
+
+    Parameters
+    ----------
+    population : list
+        List of dictionaries containing the parameters for training a GA model (see population_generator function)
+    parents : dict
+        Dictionarys indicating which creatures to pair off for mating
+    mutation_rate : float
+        What percentage of the time to mutate the child creature
+
+    Returns
+    -------
+    child : dict
+        Dictionary representing a child creature
+    '''
     mom = population[parents['mom']]
     dad = population[parents['dad']]
     
@@ -120,21 +225,4 @@ def breed(population, parents, mutation_rate):
         }
     
     return child
-    
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     

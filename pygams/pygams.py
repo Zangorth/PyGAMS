@@ -103,48 +103,48 @@ def population_generator(models: list, pipes: list, population_size: int):
 ##########
 # PyGAMS #
 ##########
-def pygams(x, y, models, pipes, metric, cross_validator, 
-           generations=100, population_size=100, survivors=10, mutation_rate=0.1, 
-           n_jobs=1):
-    models, pipes = space_converter(models), space_converter(pipes)
+# def pygams(x, y, models, pipes, metric, cross_validator, 
+#            generations=100, population_size=100, survivors=10, mutation_rate=0.1, 
+#            n_jobs=1):
+#     models, pipes = space_converter(models), space_converter(pipes)
     
-    if models is None or pipes is None:
-        print('Models and Pipes must be either space object or list of space objects')
-        return None
+#     if models is None or pipes is None:
+#         print('Models and Pipes must be either space object or list of space objects')
+#         return None
     
-    models, pipes = speciation(models), speciation(pipes)
+#     models, pipes = speciation(models), speciation(pipes)
     
-    population = population_generator(models, pipes, population_size)
+#     population = population_generator(models, pipes, population_size)
     
-    for i in range(generations):
-        print(i)
-        if n_jobs == 1:
-            fitness = [assess_fitness(x, y, 
-                                      pipe=creature['pipe'], pipe_params=creature['pipe_params'],
-                                      model=creature['model'], model_params=creature['model_params'])
-                       for creature in population]
+#     for i in range(generations):
+#         print(i)
+#         if n_jobs == 1:
+#             fitness = [assess_fitness(x, y, 
+#                                       pipe=creature['pipe'], pipe_params=creature['pipe_params'],
+#                                       model=creature['model'], model_params=creature['model_params'])
+#                        for creature in population]
             
-        else:
-            iterables = [[x, y, 
-                          creature['pipe'], creature['pipe_params'],
-                          creature['model'], creature['model_params']] 
-                         for creature in population]
+#         else:
+#             iterables = [[x, y, 
+#                           creature['pipe'], creature['pipe_params'],
+#                           creature['model'], creature['model_params']] 
+#                          for creature in population]
             
-            pool = Pool(n_jobs)
-            fitness = pool.starmap(assess_fitness, iterables)
-            pool.close()
-            pool.join()
+#             pool = Pool(n_jobs)
+#             fitness = pool.starmap(assess_fitness, iterables)
+#             pool.close()
+#             pool.join()
         
-        for i in range(len(fitness)):
-            population[i]['fitness'].append(fitness[i])
+#         for i in range(len(fitness)):
+#             population[i]['fitness'].append(fitness[i])
         
-        survival_population = rescuer(fitness, population, survivors)
+#         survival_population = rescuer(fitness, population, survivors)
         
-        parent_population = choose_parents(population, num_children=population_size-survivors)
+#         parent_population = choose_parents(population, num_children=population_size-survivors)
         
-        child_population = [breed(population, parents, mutation_rate) for parents in parent_population]
+#         child_population = [breed(population, parents, mutation_rate) for parents in parent_population]
         
-        population = survival_population + child_population
+#         population = survival_population + child_population
     
 
 ##########
@@ -153,7 +153,41 @@ def pygams(x, y, models, pipes, metric, cross_validator,
 class PyGAMS():
     def __init__(self, models, pipes, metric=roc_auc_score, cv=ShuffleSplit, 
                  generations=100, population_size=100, survivors=10, mutation_rate=0.1):
-        
+        '''
+        Description - Class of functions uses a genetic algorithm to select the optimal model specification
+
+        Parameters
+        ----------
+        models : Space or list of spaces
+            The model space(s) to be optimized over
+        pipes : Space or list of spaces, optional
+            The pipeline space to be optimized over
+        metric : callable, optional
+            The scoring metric to use when evaluating the model. 
+            Must be provided as a function/callable that takes y_true and y_score as arguments. 
+            The default is roc_auc_score.
+        cv : callable, optional
+            The method of cross-validation to be used when evaluating the model. 
+            Must be provided as a function/callable that takes x and y as arguments.
+            The default is ShuffleSplit.
+        generations : int, optional
+            The number of iterations/generations to use in the genetic algorithm. 
+            The default is 100.
+        population_size : int, optional
+            The number of creatures (models/pipelines) to evaluate per generation. 
+            The default is 100.
+        survivors : int, optional
+            The top n creatures (models/pipelines) to keep between generations. 
+            The default is 10.
+        mutation_rate : float, optional
+            The probability of a parameter to mutate (randomly change) during the mating process. 
+            The default is 0.1.
+
+        Returns
+        -------
+        None.
+
+        '''
         models, pipes = space_converter(models), space_converter(pipes)
         
         if models is None or pipes is None:
