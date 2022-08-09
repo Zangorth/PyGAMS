@@ -4,6 +4,7 @@
 from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
 from multiprocessing import Pool
+import pandas as pd
 import numpy as np
 import os
 
@@ -12,6 +13,27 @@ os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
 from mate import choose_parents, rescuer, breed
 from fitness import assess_fitness
 from space import Space
+
+#############
+# Pass Pipe #
+#############
+class PassPipe():
+    def __init__(self):
+        '''
+        Description default pipeline that returns the same dataframe it was given
+
+        Returns
+        -------
+        None.
+
+        '''
+        return None
+    
+    def fit(self):
+        return None
+    
+    def transform(x: pd.DataFrame):
+        return x
 
 ######################
 # Convert Space Type #
@@ -104,7 +126,7 @@ def population_generator(models: list, pipes: list, population_size: int):
 # PyGAMS #
 ##########
 class PyGAMS():
-    def __init__(self, models, pipes, metric=roc_auc_score, cv=ShuffleSplit, 
+    def __init__(self, models, pipes=None, metric=roc_auc_score, cv=ShuffleSplit, 
                  generations=100, population_size=100, survivors=10, mutation_rate=0.1):
         '''
         Description - Class of functions uses a genetic algorithm to select the optimal model specification
@@ -141,6 +163,9 @@ class PyGAMS():
         None.
 
         '''
+        if pipes is None:
+           pipes = [Space(PassPipe)] 
+        
         models, pipes = space_converter(models), space_converter(pipes)
         
         if models is None or pipes is None:
