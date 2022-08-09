@@ -103,53 +103,6 @@ def population_generator(models: list, pipes: list, population_size: int):
 ##########
 # PyGAMS #
 ##########
-# def pygams(x, y, models, pipes, metric, cross_validator, 
-#            generations=100, population_size=100, survivors=10, mutation_rate=0.1, 
-#            n_jobs=1):
-#     models, pipes = space_converter(models), space_converter(pipes)
-    
-#     if models is None or pipes is None:
-#         print('Models and Pipes must be either space object or list of space objects')
-#         return None
-    
-#     models, pipes = speciation(models), speciation(pipes)
-    
-#     population = population_generator(models, pipes, population_size)
-    
-#     for i in range(generations):
-#         print(i)
-#         if n_jobs == 1:
-#             fitness = [assess_fitness(x, y, 
-#                                       pipe=creature['pipe'], pipe_params=creature['pipe_params'],
-#                                       model=creature['model'], model_params=creature['model_params'])
-#                        for creature in population]
-            
-#         else:
-#             iterables = [[x, y, 
-#                           creature['pipe'], creature['pipe_params'],
-#                           creature['model'], creature['model_params']] 
-#                          for creature in population]
-            
-#             pool = Pool(n_jobs)
-#             fitness = pool.starmap(assess_fitness, iterables)
-#             pool.close()
-#             pool.join()
-        
-#         for i in range(len(fitness)):
-#             population[i]['fitness'].append(fitness[i])
-        
-#         survival_population = rescuer(fitness, population, survivors)
-        
-#         parent_population = choose_parents(population, num_children=population_size-survivors)
-        
-#         child_population = [breed(population, parents, mutation_rate) for parents in parent_population]
-        
-#         population = survival_population + child_population
-    
-
-##########
-# PyGAMS #
-##########
 class PyGAMS():
     def __init__(self, models, pipes, metric=roc_auc_score, cv=ShuffleSplit, 
                  generations=100, population_size=100, survivors=10, mutation_rate=0.1):

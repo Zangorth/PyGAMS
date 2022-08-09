@@ -33,15 +33,23 @@ class PassPipe():
 # Pipeline Adder #
 ##################
 class Space():
-    '''
-    Description - Defines the search space for a model or pipeline object in GAMS
-    
-    Arguments:
-        space_object - A pipeline or model function. 
-                       Pipelines should have a fit and transform method
-                       Models should have a fit and predict method
-    '''
     def __init__(self, space_object, name=None):
+        '''
+        Description - Defines the search space for a model or pipeline object in GAMS    
+
+        Parameters
+        ----------
+        space_object : callable
+            A pipeline or model function. 
+            Pipelines should have a fit and transform method
+            Models should have a fit and predict method
+        name : TYPE, optional
+            The name to assign the creature (model/pipeline). The default is None.
+
+        Returns
+        -------
+        None.
+        '''
         self.space_object = space_object
         self.name = name
         self.types = {}
@@ -52,14 +60,24 @@ class Space():
     def Integer(self, parameter: str, low: int, high: int, distribution='uniform'):
         '''
         Description - Creates a search space that returns an integer
-        
-        Arguments:
-            parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
-                           parameter names should match with what they are called in the model/pipeline function
-            low          - The lower bound of the search space
-            high         - The upper bound of the search space
-            distribution - The method of drawing samples from the search space
-                           options include 'uniform', 'log-uniform', and 'exponential-decay'
+
+        Parameters
+        ----------
+        parameter : str
+            The name of the parameter to be optimized, for example the learning rate of n_estimators
+            parameter names should match with what they are called in the model/pipeline function
+        low : int
+            The lower bound of the search space
+        high : int
+            The upper bound of the search space
+        distribution : TYPE, optional
+            The method of drawing samples from the search space
+            options include 'uniform', 'log-uniform', and 'exponential-decay'
+
+        Returns
+        -------
+        TYPE
+            An integer between the low and high values
         '''
         if distribution == 'uniform':
             def generator():
@@ -81,14 +99,24 @@ class Space():
     def Real(self, parameter: str, low: float, high: float, distribution='uniform'):
         '''
         Description - Creates a search space that returns a real valued number
-        
-        Arguments:
-            parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
-                           parameter names should match with what they are called in the model/pipeline function
-            low          - The lower bound of the search space
-            high         - The upper bound of the search space
-            distribution - The method of drawing samples from the search space
-                           options include 'uniform', 'log-uniform', and 'exponential-decay'
+
+        Parameters
+        ----------
+        parameter : str
+            The name of the parameter to be optimized, for example the learning rate of n_estimators
+            parameter names should match with what they are called in the model/pipeline function
+        low : int
+            The lower bound of the search space
+        high : int
+            The upper bound of the search space
+        distribution : TYPE, optional
+            The method of drawing samples from the search space
+            options include 'uniform', 'log-uniform', and 'exponential-decay'
+
+        Returns
+        -------
+        TYPE
+            A float between the low and high values
         '''
         if distribution == 'uniform':
             def generator():
@@ -110,12 +138,22 @@ class Space():
     def Category(self, parameter: str, choices: list, p=None):
         '''
         Description - Creates a search space that returns a category
-        
-        Arguments:
-            parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
-                           parameter names should match with what they are called in the model/pipeline function
-            choices      - A list of options that define the search space for this parameter
-            p            - A list of probability (0, 1) corresponding to the initial likelihood of choosing each option
+
+        Parameters
+        ----------
+        parameter : str
+            The name of the parameter to be optimized, for example the learning rate of n_estimators
+            parameter names should match with what they are called in the model/pipeline function
+        choices : list
+            A list of options that define the search space for this parameter
+        p : TYPE, optional
+            A list of probability (0, 1) corresponding to the initial likelihood of choosing each option. 
+            The default is None, which assigns each choice an equal probability.
+
+        Returns
+        -------
+        TYPE
+            One element in the set of choices
         '''
         def generator():
             return random.choice(choices, p=p)
@@ -125,18 +163,37 @@ class Space():
         
         return None
     
-    def Categories(self, parameter: str, choices: list, n=None, low=None, high=None, p=None):
+    def Categories(self, parameter: str, choices: list, n=None, low=1, high=None, p=None):
         '''
         Description - Creates a search space that returns a list of categories
-        
-        Arguments:
-            parameter    - The name of the parameter to be optimized, for example the learning rate of n_estimators
-            choices      - A list of options that define the search space for this parameter
-            n            - The number of items to be chosen from the list of choices
-            low/high     - The lower and upper bounds (inclusive) on the number of items to be chosen from the list
-                           For example, low=2, high=10 will return between 2 and 10 items from the list, with every
-                           number between 2 and 10 being equally likely to be chosen
-            p            - A list of probability (0, 1) corresponding to the initial likelihood of choosing each option
+
+        Parameters
+        ----------
+        parameter : str
+            The name of the parameter to be optimized, for example the learning rate of n_estimators
+            parameter names should match with what they are called in the model/pipeline function
+        choices : list
+            A list of options that define the search space for this parameter
+        n : int, optional
+            DESCRIPTION. The default is None.
+        low : int, optional
+            The lower bound on the number of items to be chosen from the list. 
+            For example, low=2, high=10 will return between 2 and 10 items from the list, with every
+            number between 2 and 10 being equally likely to be chosen
+            The default is 1
+        high : int, optional
+            The upper bound on the number of items to be chosen from the list
+            For example, low=2, high=10 will return between 2 and 10 items from the list, with every
+            number between 2 and 10 being equally likely to be chosen
+            The default is equal to the length of the list of choices.
+        p : TYPE, optional
+            A list of probability (0, 1) corresponding to the initial likelihood of choosing each option. 
+            The default is None, which assigns each choice an equal probability.
+
+        Returns
+        -------
+        TYPE
+            N elements in the set of choices
         '''
         def generator():
             if n is not None:
@@ -155,6 +212,15 @@ class Space():
         self.generators[parameter] = generator
 
     def generate(self):
+        '''
+        Description - Generates a possible set of parameters for model/pipeline that makes up the space
+        
+        Returns
+        -------
+        output : dict
+            A dictionary of parameters for the model/pipeline that falls within the parameter space
+
+        '''
         output = {key: self.generators[key]() for key in self.generators.keys()}
         
         return output
