@@ -3,31 +3,7 @@
 ###########
 from scipy.stats import loguniform
 from numpy import random, arange
-import os
-
-os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
-
-import rng
-
-########################
-# Passthrough Pipeline #
-########################
-class PassPipe():
-    '''
-    Description - Passthrough pipeline that returns the same dataframe it was fed
-    
-    Arguments:
-        None
-    '''
-    def __init__(self):
-        return None
-    
-    def fit(self, df):
-        return None
-    
-    def transform(self, df):
-        return df
-
+from pygams import rng
 
 ##################
 # Pipeline Adder #
