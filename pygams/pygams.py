@@ -3,8 +3,10 @@
 ###########
 from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
+from matplotlib import pyplot as plt
 from multiprocessing import Pool
 from collections import deque
+import seaborn as sea
 import pandas as pd
 import numpy as np
 import os
@@ -291,4 +293,32 @@ class PyGAMS():
             population = survival_population + child_population
         
         return survival_population
+    
+    def plot_scores(self, kind='max', title=None, ylim=None):
+        sea.set(style='whitegrid', rc={'figure.dpi': 300})
+        
+        pt = self.population_tracker.copy()
+        
+        plot_points = pt.groupby('generation')['fitness'].aggregate(kind)
+        baseline = pt.loc[pt['generation'] == 0, 'fitness'].mean()
+        
+        if title is None:
+            title = f'{kind} {self.metric.__name__} by generation'.title()
+            
+        if ylim is None:
+            bot = min([min(plot_points), baseline]) - 0.5*pt.loc[pt['generation'] == 0, 'fitness'].std()
+            top = max([max(plot_points), baseline]) + 0.5*pt.loc[pt['generation'] == 0, 'fitness'].std()
+            lim = (bot, top)
+        
+        fig, ax = plt.subplots(figsize=(16, 9))
+        sea.lineplot(x=np.arange(0, self.generations), y=plot_points,
+                     label=self.metric.__name__, ax=ax)
+        sea.lineplot(x=np.arange(0, self.generations), y=baseline,
+                     color='red', ls='dashed', label='Baseline Score')
+        ax.set_ylim(lim)
+        ax.set_title(title)
+        
+        return None
+        
+        
     
