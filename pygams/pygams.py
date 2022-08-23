@@ -4,15 +4,17 @@
 from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
 from multiprocessing import Pool
+from collections import deque
 import pandas as pd
 import numpy as np
 import os
 
-os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
+os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS')
 
-from mate import choose_parents, rescuer, breed
-from fitness import assess_fitness
-from space import Space
+from pygams.mate import choose_parents, rescuer, breed
+from pygams.fitness import assess_fitness
+from pygams.space import Space
+import pygams
 
 #############
 # Pass Pipe #
@@ -44,10 +46,10 @@ def space_converter(space: Space):
     Arguments:
         space - the space object to be converted into list of space objects
     '''
-    if type(space) == Space:
+    if type(space) == pygams.space.Space:
         return [space]
     
-    elif type(space) == list and all(type(item) == Space for item in space):
+    elif type(space) == list and all(type(item) == pygams.space.Space for item in space):
         return space
     
     else:
@@ -57,7 +59,7 @@ def space_converter(space: Space):
 ###################
 # Name that Space #
 ###################
-def speciation(space: Space):
+def speciation(space: Space, kind):
     '''
     Description - Ensures that each space has a name
     
@@ -73,7 +75,7 @@ def speciation(space: Space):
     '''
     for i in range(len(space)):
         if space[i].name is None:
-            space[i].name = f'species_{i}'
+            space[i].name = f'{kind}_{i}'
 
     return space
 
@@ -105,12 +107,12 @@ def population_generator(models: list, pipes: list, population_size: int):
         model_space = np.random.choice(models)
         pipe_space = np.random.choice(pipes)
         
-        creature = {'model_species': model_space.name.replace('species', 'model'),
+        creature = {'model_species': model_space.name,
                     'model_space': model_space,
                     'model': model_space.space_object,
                     'model_params': model_space.generate(),
                     'model_types': model_space.types,
-                    'pipe_species': pipe_space.name.replace('species', 'pipe'),
+                    'pipe_species': pipe_space.name,
                     'pipe_space': pipe_space,
                     'pipe': pipe_space.space_object,
                     'pipe_params': pipe_space.generate(),
@@ -121,6 +123,62 @@ def population_generator(models: list, pipes: list, population_size: int):
         
     return population
 
+####################
+# Population to DF #
+####################
+def population_to_df(models, pipes, population):
+    def creature_to_row(creature, columns, kind, index):
+        data = deque([creature[f'{kind}_species']])
+        for key in creature[f'{kind}_types'].keys():
+            new_value = np.array(creature[f'{kind}_params'][key],
+                                 dtype=object if creature[f'{kind}_types'][key] == 'cats' else None)
+            
+            data.append(new_value)
+            
+        data = np.array(data, dtype=object).reshape(1, len(creature[f'{kind}_params'].keys())+1)
+        
+        return pd.DataFrame(data=data, index=[index], columns=columns)
+    
+    species_dict = {}
+    for i in range(len(population)):
+        species = population[i]['model_species'] + ' x ' + population[i]['pipe_species']
+        
+        model_columns = ['model_species'] + [species + ' | ' + key for key in population[i]['model_params'].keys()]
+        pipe_columns = ['pipe_species'] + [species + ' | ' + key for key in population[i]['pipe_params'].keys()]
+        
+        model_merge = creature_to_row(population[i], model_columns, 'model', i)
+        pipe_merge = creature_to_row(population[i], pipe_columns, 'pipe', i)
+        
+        if species not in species_dict:
+            species_dict[species] = pd.concat([
+                                               pd.DataFrame({'species': [species]}, index=[i]),
+                                               pd.DataFrame({'fitness': [population[i]['fitness'][-1]]}, index=[i]),
+                                               model_merge,
+                                               pipe_merge
+                                               ], axis=1)
+        
+        else:
+            to_append = pd.concat([
+                                   pd.DataFrame({'species': [species]}, index=[i]),
+                                   pd.DataFrame({'fitness': [population[i]['fitness'][-1]]}, index=[i]),
+                                   model_merge,
+                                   pipe_merge
+                                   ], axis=1)
+            
+            species_dict[species] = pd.concat([species_dict[species], to_append], axis=0)
+            
+    out_cols = ['fitness', 'species', 'model_species', 'pipe_species']
+    for model in models:
+        for pipe in pipes:
+            out_cols += [f'{model.name} x {pipe.name} | {param}' for param in model.types.keys()]
+            out_cols += [f'{model.name} x {pipe.name} | {param}' for param in pipe.types.keys()]
+        
+    out = pd.DataFrame(index=np.arange(0, len(population)), columns=out_cols)
+    
+    for species in species_dict:
+        out = out.fillna(species_dict[species])
+        
+    return out
 
 ##########
 # PyGAMS #
@@ -172,21 +230,42 @@ class PyGAMS():
             print('Models and Pipes must be either space object or list of space objects')
             return None
         
-        self.models, self.pipes = speciation(models), speciation(pipes)
+        self.models, self.pipes = speciation(models, 'model'), speciation(pipes, 'pipe')
         
         self.metric = metric
         self.cv = cv
         self.generations = generations
         self.population_size=population_size
-        self.survivors = survivors        
+        self.survivors = survivors
         self.mutation_rate = mutation_rate
-        
+        self.population_tracker = None
+                
         return None    
     
-    def run(self, x, y, n_jobs=1, proba=True):
+    def run(self, x: pd.DataFrame, y: pd.Series, n_jobs=1, proba=True):
+        '''
+        Description - Runs the genetic algorithm and outputs a population of optimal models
+
+        Parameters
+        ----------
+        x : pd.DataFrame
+            DESCRIPTION.
+        y : pd.Series
+            DESCRIPTION.
+        n_jobs : TYPE, optional
+            DESCRIPTION. The default is 1.
+        proba : TYPE, optional
+            DESCRIPTION. The default is True.
+
+        Returns
+        -------
+        survival_population : TYPE
+            DESCRIPTION.
+
+        '''
         population = population_generator(self.models, self.pipes, self.population_size)
         
-        for i in range(self.generations):
+        for generation in range(self.generations):
             fitness = [assess_fitness(x, y, 
                                       pipe=creature['pipe'], pipe_params=creature['pipe_params'],
                                       model=creature['model'], model_params=creature['model_params'],
@@ -195,7 +274,17 @@ class PyGAMS():
             
             for i in range(len(fitness)):
                 population[i]['fitness'].append(fitness[i])
+            
+            if self.population_tracker is None:
+                self.population_tracker = population_to_df(self.models, self.pipes, population)
+                self.population_tracker['generation'] = generation
                 
+            else:
+                to_append = population_to_df(self.models, self.pipes, population)
+                to_append['generation'] = generation
+                
+                self.population_tracker = pd.concat([self.population_tracker, to_append], axis=0)
+            
             survival_population = rescuer(fitness, population, self.survivors)
             parent_population = choose_parents(population, num_children=self.population_size-self.survivors)
             child_population = [breed(population, parents, self.mutation_rate) for parents in parent_population]
