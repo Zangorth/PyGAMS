@@ -6,6 +6,15 @@ from sklearn.metrics import roc_auc_score
 import pandas as pd
 import numpy as np
 
+#############
+# IDX Split #
+#############
+def split_idx(x, y, idx):
+    new_x = x.loc[x.index.isin(idx)].copy()
+    new_y = y.loc[y.index.isin(idx)].copy()
+    
+    return (new_x, new_y)
+
 ##################
 # Assess Fitness #
 ##################
@@ -42,22 +51,34 @@ def assess_fitness(x, y, pipe, pipe_params, model, model_params,
         The mean value of the fitness metric over the n-splits specified by the cv function
 
     '''
-    pipeline = pipe(**pipe_params)
-    pipeline.fit(x)
+    if type(x) != pd.core.frame.DataFrame:
+        print('X must be input as a dataframe')
+        return None
     
-    x = pipeline.transform(x)
-    x = x.values if type(x) == pd.core.frame.DataFrame else x
+    if type(y) != pd.core.series.Series:
+        print('Y must be input as a series')
+        return None
     
     splitter = cv()
     
     fitness = []
     for train_idx, test_idx in splitter.split(x, y):
+        x_train, y_train = split_idx(x, y, train_idx)
+        x_test, y_test = split_idx(x, y, test_idx)
+        
+        pipeline = pipe(**pipe_params)
+        pipeline.fit(x_train)
+        
+        x_train, x_test = pipeline.transform(x_train), pipeline.transform(x_test)
+        x_train = x_train.values if type(x_train) == pd.core.frame.DataFrame else x_train
+        x_test = x_test.values if type(x_test) == pd.core.frame.DataFrame else x_test
+        
         fit_model = model(**model_params)
-        fit_model.fit(x[train_idx], y[train_idx])
+        fit_model.fit(x_train, y_train)
+         
+        predictions = (fit_model.predict_proba(x_test)[:, 1] if proba else
+                       fit_model.predict(x_test))
         
-        predictions = (fit_model.predict_proba(x[test_idx])[:, 1] if proba else
-                       fit_model.predict(x[test_idx]))
-        
-        fitness.append(metric(y[test_idx], predictions))
+        fitness.append(metric(y_test, predictions))
     
     return np.mean(fitness)
