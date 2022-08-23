@@ -132,8 +132,11 @@ def population_to_df(models, pipes, population):
     def creature_to_row(creature, columns, kind, index):
         data = deque([creature[f'{kind}_species']])
         for key in creature[f'{kind}_types'].keys():
-            new_value = np.array(creature[f'{kind}_params'][key],
-                                 dtype=object if creature[f'{kind}_types'][key] == 'cats' else None)
+            if creature[f'{kind}_types'][key] == 'cats':
+                new_value = np.array(creature[f'{kind}_params'][key], dtype=object)
+                
+            else:
+                new_value = creature[f'{kind}_params'][key]
             
             data.append(new_value)
             
@@ -297,7 +300,7 @@ class PyGAMS():
     def plot_scores(self, kind='max', title=None, ylim=None):
         sea.set(style='whitegrid', rc={'figure.dpi': 300})
         
-        pt = self.population_tracker.copy()
+        pt = self.population_tracker.copy().reset_index(drop=True)
         
         plot_points = pt.groupby('generation')['fitness'].aggregate(kind)
         baseline = pt.loc[pt['generation'] == 0, 'fitness'].mean()
@@ -319,6 +322,7 @@ class PyGAMS():
         ax.set_title(title)
         
         return None
-        
+    
+    
         
     
