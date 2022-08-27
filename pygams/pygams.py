@@ -45,8 +45,17 @@ class PassPipe():
 def space_converter(space: Space):
     '''
     Description - Converts Space object into a list of Space objects
-    Arguments:
-        space - the space object to be converted into list of space objects
+
+    Parameters
+    ----------
+    space : Space
+        The space object to be converted into list of space objects
+
+    Returns
+    -------
+    TYPE
+        A list of space objects
+
     '''
     if type(space) == pygams.space.Space:
         return [space]
@@ -128,8 +137,45 @@ def population_generator(models: list, pipes: list, population_size: int):
 ####################
 # Population to DF #
 ####################
-def population_to_df(models, pipes, population):
-    def creature_to_row(creature, columns, kind, index):
+def population_to_df(models: list, pipes: list, population: dict):
+    '''
+    Description - Converts a population of creatures from a dictionary format to a dataframe format
+
+    Parameters
+    ----------
+    models : list
+        A list of space objects including the model options and their parameters
+    pipes : list
+        A list of space objects including the pipeline options and their parameters
+    population : dict
+        A dictionary of models, pipelines, and their parameters 
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe of models, pipelines, and their parameters
+    '''
+    def creature_to_row(creature: dict, columns: list, kind: str, index: int):
+        '''
+        Description - Takes and individual creature and converts it into a row for the dataframe
+
+        Parameters
+        ----------
+        creature : dict
+            An individual member of the population or a dictionary collection of models, pipelines, and parameters
+        columns : list
+            The names of the columns to be used in the row
+        kind : str
+            'model' or 'pipe'
+        index : int
+            The index number to use for the row
+
+        Returns
+        -------
+        pd.DataFrame
+            A row of a dataframe for the population to df function
+
+        '''
         data = deque([creature[f'{kind}_species']])
         for key in creature[f'{kind}_types'].keys():
             if creature[f'{kind}_types'][key] == 'cats':
@@ -300,6 +346,28 @@ class PyGAMS():
         return survival_population
     
     def plot_scores(self, kind='max', title=None, ylim=None):
+        '''
+        Description - Plots the scores gennerated by the genetic algorithm by generation
+
+        Parameters
+        ----------
+        kind : str, optional
+            Function to use when assessing the genetic algorithm. 
+            By default the function will plot the 'max' score in each generation, 
+                against the baseline of the average score for the first generation
+            Other options include 'min' score in each generation, 'mean' score in 
+                each generation, or any other function that would reasonably work with a pandas groupby
+        title : str, optional
+            The title of the graph to be used. 
+            The default is None, which equates to {kind} {self.metric.__name__} by generation.
+                An example of this would be 'Max Roc_Auc_Score By Generation'
+        ylim : tuple, optional
+            The ylim to be used for the plot. The default is None, which will automatically determine appropriate limits.
+
+        Returns
+        -------
+        None.
+        '''
         sea.set(style='whitegrid', rc={'figure.dpi': 300})
         
         pt = self.population_tracker.copy().reset_index(drop=True)
@@ -326,9 +394,36 @@ class PyGAMS():
         return None
     
     def distribution_options(self):
+        '''
+        Description - Returns a list of possible parameters that can be displayed by the plot_parameter function
+
+        Returns
+        -------
+        list
+            A list of possible parameters
+        '''
         return [col for col in self.population_tracker.columns if col not in ['fitness', 'generation']]
     
-    def plot_parameter(self, param, title=None, ylim=None):
+    def plot_parameter(self, param: str, title=None, ylim=None):
+        '''
+        Description - Plot which shows how the distribution of a parameter is changing over time (by generation)
+
+        Parameters
+        ----------
+        param : str
+            The name of the parameter to be plotted. 
+            A list of parameter options can be found using the distribution options function
+        title : str, optional
+            The title of the graph to be used. 
+            The default is None, which equates to Distribution Of {param} By Generation.
+        ylim : tuple, optional
+            The ylim to be used for the plot. The default is None, which will automatically determine appropriate limits.
+
+        Returns
+        -------
+        None.
+
+        '''
         sea.set(style='whitegrid', rc={'figure.dpi': 300})
         
         pt = self.population_tracker.copy().reset_index(drop=True)
@@ -390,4 +485,5 @@ class PyGAMS():
             #     avg = pd.concat([avg, generation_frame], axis=0).reset_index(drop=True)
             
             print('Parameter plots not yet implemented for lists of categories')
+            print('These can be viewed manually by looking at PyGAMS().population_tracker')
             return None
