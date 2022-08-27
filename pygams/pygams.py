@@ -247,7 +247,7 @@ class PyGAMS():
                 
         return None    
     
-    def run(self, x: pd.DataFrame, y: pd.Series, n_jobs=1, proba=True):
+    def run(self, x: pd.DataFrame, y: pd.Series, n_jobs=1, proba=True, verbose=False):
         '''
         Description - Runs the genetic algorithm and outputs a population of optimal models
 
@@ -271,6 +271,8 @@ class PyGAMS():
         population = population_generator(self.models, self.pipes, self.population_size)
         
         for generation in range(self.generations):
+            if verbose:
+                print(f'Generations Completed: {generation} / {self.generations}')
             fitness = [assess_fitness(x, y, 
                                       pipe=creature['pipe'], pipe_params=creature['pipe_params'],
                                       model=creature['model'], model_params=creature['model_params'],
@@ -311,18 +313,81 @@ class PyGAMS():
         if ylim is None:
             bot = min([min(plot_points), baseline]) - 0.5*pt.loc[pt['generation'] == 0, 'fitness'].std()
             top = max([max(plot_points), baseline]) + 0.5*pt.loc[pt['generation'] == 0, 'fitness'].std()
-            lim = (bot, top)
+            ylim = (bot, top)
         
         fig, ax = plt.subplots(figsize=(16, 9))
         sea.lineplot(x=np.arange(0, self.generations), y=plot_points,
                      label=self.metric.__name__, ax=ax)
         sea.lineplot(x=np.arange(0, self.generations), y=baseline,
                      color='red', ls='dashed', label='Baseline Score')
-        ax.set_ylim(lim)
+        ax.set_ylim(ylim)
         ax.set_title(title)
         
         return None
     
+    def distribution_options(self):
+        return [col for col in self.population_tracker.columns if col not in ['fitness', 'generation']]
     
+    def plot_parameter(self, param, title=None, ylim=None):
+        sea.set(style='whitegrid', rc={'figure.dpi': 300})
         
-    
+        pt = self.population_tracker.copy().reset_index(drop=True)
+        
+        param_type = (list if type(pt[param].dropna().iloc[0]) == np.ndarray else
+                      float if str(pt[param].dropna().iloc[0]).replace('.', '', 1).isnumeric()
+                      else str)
+        
+        if param_type is str:
+            size = pt.loc[pt[param].notnull()].groupby([param, 'generation']).size().rename('count').reset_index()
+            size['percent'] = size['count'] / self.population_size
+            
+            if title is None:
+                title = f'Distribution of {param} by generation'.title()
+            
+            if ylim is None:
+                ylim = (-0.01, 1.01)
+            
+            fig, ax = plt.subplots(figsize=(16, 9))
+            sea.lineplot(x='generation', y='percent', hue=param, data=size)
+            ax.set_title(title)
+            ax.set_ylim(ylim)
+            ax.set_ylabel('Percentage')
+            plt.legend(title='')
+            
+        elif param_type is float:
+            avg = pt.groupby('generation')[param].aggregate(['mean', 'sem']).reset_index()
+            avg['sem'] = avg['sem'].fillna(0)
+            
+            if title is None:
+                title = f'Mean value of {param} by generation'.title()
+                
+            if ylim is None:
+                bot = min(avg['mean'] - 2.5*avg['sem'])
+                top = max(avg['mean'] + 2.5*avg['sem'])
+                ylim = (bot, top)
+            
+            fig, ax = plt.subplots(figsize=(16, 9))
+            sea.scatterplot(x='generation', y='mean', data=avg,
+                            ax=ax)
+            ax.errorbar(x=avg['generation'], y=avg['mean'], yerr=1.96*avg['sem'],
+                        color='black', ls='')
+            ax.set_title(title)
+            ax.set_ylabel('Mean Value')
+            ax.set_ylim(ylim)
+        
+        else:
+            # dummy_frame = pd.get_dummies(pt[param].dropna().apply(pd.Series).stack()).groupby(level=0).sum()
+            # dummy_frame['generation'] = pt.loc[pt[param].notnull(), 'generation']
+            
+            # avg = pd.DataFrame(columns=['generation', 'feature', 'percentage'])
+            # for generation in sorted(dummy_frame['generation'].unique()):
+            #     generation_frame = dummy_frame.loc[dummy_frame['generation'] == generation].sum(axis=0)/self.population_size
+            #     generation_frame = generation_frame.rename('percentage').reset_index()
+            #     generation_frame['generation'] = generation
+            #     generation_frame.columns = ['feature', 'percentage', 'generation']
+            #     generation_frame = generation_frame[list(avg.columns)]
+                
+            #     avg = pd.concat([avg, generation_frame], axis=0).reset_index(drop=True)
+            
+            print('Parameter plots not yet implemented for lists of categories')
+            return None
