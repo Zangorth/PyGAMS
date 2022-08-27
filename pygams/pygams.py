@@ -81,7 +81,7 @@ def speciation(space: Space, kind):
 
     Returns
     -------
-    space : TYPE
+    space : Space
         A list of named spaced objects
     '''
     for i in range(len(space)):
@@ -434,7 +434,7 @@ class PyGAMS():
         
         if param_type is str:
             size = pt.loc[pt[param].notnull()].groupby([param, 'generation']).size().rename('count').reset_index()
-            size['percent'] = size['count'] / self.population_size
+            size['percent'] = size['count'] / size.groupby('generation')['count'].transform('sum')
             
             if title is None:
                 title = f'Distribution of {param} by generation'.title()
