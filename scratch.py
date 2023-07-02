@@ -4,12 +4,10 @@
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.datasets import make_classification
 import pandas as pd
-import os
 
-os.chdir(r'C:\Users\Samuel\Google Drive\Portfolio\PyGAMS\pygams')
-
-from pygams import PyGAMS
-from space import Space
+# Custom Import
+from pygams.pygams import PyGAMS
+from pygams.space import Space
 
 #################
 # Generate Data #
@@ -21,6 +19,7 @@ panda = panda.merge(pd.DataFrame(x, columns=[f'feature_{i}' for i in range(x.sha
                     how='outer', left_index=True, right_index=True)
 
 x = panda.drop('y', axis=1).copy()
+y = panda['y']
 
 ############
 # Pipeline #
