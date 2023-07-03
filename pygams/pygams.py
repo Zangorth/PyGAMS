@@ -1,7 +1,7 @@
 ###########
 # Imports #
 ###########
-from pygams.helpers import PassPipe, space_converter, speciation, kwarg_gen
+from pygams.helpers import PassPipe, space_converter, speciation, kwarg_gen, param_counter
 from pygams.populations import population_generator, population_to_df
 from pygams.mate import choose_parents, rescuer, breed
 from sklearn.model_selection import ShuffleSplit
@@ -99,10 +99,10 @@ class PyGAMS():
         '''
         population = population_generator(self.models, self.pipes, self.population_size)
         
-        for generation in range(self.generations):
-            if verbose:
-                print(f'Generations Completed: {generation+1} / {self.generations}')
-            
+        if verbose:
+            print('Assessing Fitness...')
+
+        for generation in range(self.generations):           
             kwargs = kwarg_gen(x, y, population, self.metric, self.cv, proba, n_jobs)
 
             if n_jobs == 1:
@@ -124,6 +124,10 @@ class PyGAMS():
                 to_append['generation'] = generation
                 
                 self.population_tracker = pd.concat([self.population_tracker, to_append], axis=0)
+            
+            if verbose:
+                print(f'\nGenerations Completed: {generation+1} / {self.generations}')
+                print(f'Fitness: {np.max(fitness)}')
             
             survival_population = rescuer(fitness, population, self.survivors)
             parent_population = choose_parents(population, num_children=self.population_size-self.survivors)
@@ -158,6 +162,7 @@ class PyGAMS():
         sea.set(style='whitegrid', rc={'figure.dpi': 300})
         
         pt = self.population_tracker.copy().reset_index(drop=True)
+        pt['fitness'] = pt['fitness'].astype(float)
         
         plot_points = pt.groupby('generation')['fitness'].aggregate(kind)
         baseline = pt.loc[pt['generation'] == 0, 'fitness'].mean()
@@ -177,8 +182,11 @@ class PyGAMS():
                      color='red', ls='dashed', label='Baseline Score')
         ax.set_ylim(ylim)
         ax.set_title(title)
+        plt.legend(loc='best')
+
+        fig.show()
         
-        return None
+        return fig
     
     def distribution_options(self):
         '''
@@ -191,7 +199,7 @@ class PyGAMS():
         '''
         return [col for col in self.population_tracker.columns if col not in ['fitness', 'generation']]
     
-    def plot_parameter(self, param: str, title=None, ylim=None):
+    def plot_parameter(self, param: str, categories_to_examine=None, title=None, ylim=None):
         '''
         Description - Plot which shows how the distribution of a parameter is changing over time (by generation)
 
@@ -200,6 +208,10 @@ class PyGAMS():
         param : str
             The name of the parameter to be plotted. 
             A list of parameter options can be found using the distribution options function
+        categories_to_examine : list
+            When the param is a list of categories, select which categories you wish to see plotted
+            More category selections will lead to a busier plot, so try to keep the list small
+            If categories to examine is None, the top 10 most frequent categories will be selected automatically
         title : str, optional
             The title of the graph to be used. 
             The default is None, which equates to Distribution Of {param} By Generation.
@@ -235,6 +247,8 @@ class PyGAMS():
             ax.set_ylim(ylim)
             ax.set_ylabel('Percentage')
             plt.legend(title='')
+
+            fig.show()
             
         elif param_type is float:
             avg = pt.groupby('generation')[param].aggregate(['mean', 'sem']).reset_index()
@@ -256,21 +270,36 @@ class PyGAMS():
             ax.set_title(title)
             ax.set_ylabel('Mean Value')
             ax.set_ylim(ylim)
-        
+
+            fig.show()
+
         else:
-            # dummy_frame = pd.get_dummies(pt[param].dropna().apply(pd.Series).stack()).groupby(level=0).sum()
-            # dummy_frame['generation'] = pt.loc[pt[param].notnull(), 'generation']
-            
-            # avg = pd.DataFrame(columns=['generation', 'feature', 'percentage'])
-            # for generation in sorted(dummy_frame['generation'].unique()):
-            #     generation_frame = dummy_frame.loc[dummy_frame['generation'] == generation].sum(axis=0)/self.population_size
-            #     generation_frame = generation_frame.rename('percentage').reset_index()
-            #     generation_frame['generation'] = generation
-            #     generation_frame.columns = ['feature', 'percentage', 'generation']
-            #     generation_frame = generation_frame[list(avg.columns)]
+            if categories_to_examine is None:
+                param_counts = param_counter(pt.loc[pt[param].notnull(), param])
+
+                categories_to_examine = list(param_counts.index[0:10])
+
+            count_frame = pd.DataFrame(columns=['generation', 'param', 'count'])
+            for i in range(self.generations):
+                subset = pt.loc[(pt['generation'] == i) & (pt[param].notnull()), param]
                 
-            #     avg = pd.concat([avg, generation_frame], axis=0).reset_index(drop=True)
-            
-            print('Parameter plots not yet implemented for lists of categories')
-            print('These can be viewed manually by looking at PyGAMS().population_tracker')
-            return None
+                if len(subset) > 0:
+                    gen_counts = param_counter(subset)
+                    
+                    gen_counts = gen_counts.loc[gen_counts.index.isin(categories_to_examine)].reset_index()
+                    gen_counts.columns = ['param', 'count']
+                    gen_counts['generation'] = i
+
+                    count_frame = pd.concat([count_frame, gen_counts])
+
+            fig, ax = plt.subplots(figsize=(16, 9))
+            sea.lineplot(x='generation', y='count', hue='param', data=count_frame)
+            ax.set_title(title)
+            ax.set_ylabel('Frequency Percent')
+            ax.set_ylim(ylim)
+
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=5, fancybox=True, shadow=True)
+
+            fig.show()
+        
+        return fig

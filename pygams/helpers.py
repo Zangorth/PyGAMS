@@ -1,6 +1,7 @@
 ###########
 # Imports #
 ###########
+from sklearn.feature_extraction.text import CountVectorizer
 from pygams.space import Space
 import pandas as pd
 import pygams
@@ -125,3 +126,23 @@ def kwarg_gen(x, y, population, metric, cv, proba, parallel):
             output.append(kwarg_dict)
 
     return output
+
+
+#################
+# Param Counter #
+#################
+def param_counter(df):
+    param_counts = []
+    for param in df:
+        param_counts.append(' '.join(param))
+
+    vectorizer = CountVectorizer()
+
+    param_counts = vectorizer.fit_transform(param_counts)
+    param_counts = pd.DataFrame(param_counts.toarray(), 
+                                columns=vectorizer.get_feature_names_out())
+
+    param_counts = param_counts.sum().sort_values(ascending=False)
+    param_counts = param_counts / param_counts.sum()
+
+    return param_counts
