@@ -76,3 +76,52 @@ def speciation(space: Space, kind):
             space[i].name = f'{kind}_{i}'
 
     return space
+
+###################
+# KWARG Generator #
+###################
+def kwarg_gen(x, y, population, metric, cv, proba, parallel):
+    '''
+    Parameters
+    ----------
+    x : pd.DataFrame
+        Independent variables / features for a statistical model
+    y : pd.Series
+        Dependent variables / target for a statistical model
+    pipe : Callable
+        Function that preprocesses data preparation for statistical modeling
+        Must be a class that has a fit and transform method
+    pipe_params : dict
+        Dictionary of parameters for the pipe function
+    model : Callable
+        Function that models and scores data
+        Must take x and y as an input; must have fit and predict (or predict_proba) methods
+    model_params : TYPE
+        Dictionary of parameters for the model function
+    metric : Callable, optional
+        A function that evaluates a model. The default is roc_auc_score.
+    cv : Callable, optional
+        A function that splits the data into train and test sets. 
+        Must have a split  method that takes x and y as arguments. The default is ShuffleSplit.
+    proba : str, optional
+        Whether or not to use the predict proba method during model evaluation rather than the predict method. The default is True.
+    parallel : int
+        Number of cores to be used in parallel processing
+
+    Returns
+    -------
+    Iterable of keyword arguments
+    '''
+    output = []
+    for creature in population:
+        kwarg_dict = {'x': x, 'y': y,
+                      'pipe': creature['pipe'], 'pipe_params': creature['pipe_params'],
+                      'model': creature['model'], 'model_params': creature['model_params'],
+                      'metric': metric, 'cv': cv, 'proba': proba}
+
+        if parallel > 1:
+            output.append(list(kwarg_dict.values()))
+        else:
+            output.append(kwarg_dict)
+
+    return output

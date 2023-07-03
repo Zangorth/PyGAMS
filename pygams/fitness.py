@@ -21,6 +21,8 @@ def split_idx(x, y, idx):
 def assess_fitness(x, y, pipe, pipe_params, model, model_params,
                    metric=roc_auc_score, cv=ShuffleSplit, proba=True):
     '''
+    Description - Assess the fitness of a provided model using the provided metric
+
     Parameters
     ----------
     x : pd.DataFrame
@@ -47,8 +49,7 @@ def assess_fitness(x, y, pipe, pipe_params, model, model_params,
 
     Returns
     -------
-    float
-        The mean value of the fitness metric over the n-splits specified by the cv function
+    The mean value of the fitness metric over the n-splits specified by the cv function
 
     '''
     if type(x) != pd.core.frame.DataFrame:

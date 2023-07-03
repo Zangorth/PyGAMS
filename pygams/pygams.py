@@ -1,8 +1,8 @@
 ###########
 # Imports #
 ###########
+from pygams.helpers import PassPipe, space_converter, speciation, kwarg_gen
 from pygams.populations import population_generator, population_to_df
-from pygams.helpers import PassPipe, space_converter, speciation
 from pygams.mate import choose_parents, rescuer, breed
 from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
@@ -56,7 +56,7 @@ class PyGAMS():
 
         '''
         if pipes is None:
-           pipes = [Space(PassPipe)] 
+           pipes = [Space(PassPipe)]
         
         models, pipes = space_converter(models), space_converter(pipes)
         
@@ -101,14 +101,17 @@ class PyGAMS():
         
         for generation in range(self.generations):
             if verbose:
-                print(f'Generations Completed: {generation} / {self.generations}')
+                print(f'Generations Completed: {generation+1} / {self.generations}')
             
-            fitness = [assess_fitness(x, y, 
-                                    pipe=creature['pipe'], pipe_params=creature['pipe_params'],
-                                    model=creature['model'], model_params=creature['model_params'],
-                                    metric=self.metric, cv=self.cv, proba=proba)
-                    for creature in population]
-            
+            kwargs = kwarg_gen(x, y, population, self.metric, self.cv, proba, n_jobs)
+
+            if n_jobs == 1:
+                fitness = [assess_fitness(**kwarg) for kwarg in kwargs]
+
+            else:
+                with Pool(n_jobs) as pool:
+                    fitness = pool.starmap(assess_fitness, kwargs)
+
             for i in range(len(fitness)):
                 population[i]['fitness'].append(fitness[i])
             
