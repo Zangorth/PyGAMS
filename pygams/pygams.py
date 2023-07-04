@@ -1,12 +1,13 @@
 ###########
 # Imports #
 ###########
-from pygams.helpers import PassPipe, space_converter, speciation, kwarg_gen, param_counter
+from pygams.helpers import space_converter, speciation, kwarg_gen, param_counter
 from pygams.populations import population_generator, population_to_df
 from pygams.mate import choose_parents, rescuer, breed
 from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
 from pygams.fitness import assess_fitness
+from pygams.defaults import PassPipe
 from matplotlib import pyplot as plt
 from multiprocessing import Pool
 from pygams.space import Space
