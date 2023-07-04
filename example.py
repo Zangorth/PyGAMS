@@ -1,16 +1,16 @@
 ###########
 # Imports #
 ###########
+from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler, StandardScaler
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
-from pygams.example_helpers import FeaturePipeline as FP
+from pygams.defaults import FeaturePipeline as FP
 from sklearn.datasets import make_classification
+from sklearn.impute import SimpleImputer
 from matplotlib import pyplot as plt
-import pandas as pd
-import numpy as np
-
-# Custom Import
 from pygams.pygams import PyGAMS
 from pygams.space import Space
+import pandas as pd
+import numpy as np
 
 #################
 # Generate Data #
@@ -30,8 +30,8 @@ y = panda['y']
 pipes = Space(FP, name='FeaturePipeline')
 pipes.Categories(parameter='features', 
                  choices=x.columns, low=4, high=15)
-pipes.Category(parameter='scaler', choices=['MinMaxScaler', 'MaxAbsScaler', 'StandardScaler'])
-pipes.Category(parameter='imputer', choices=['Mean', 'Median'])
+pipes.Category(parameter='scaler', choices=[MinMaxScaler(), MaxAbsScaler(), StandardScaler()])
+pipes.Category(parameter='imputer', choices=[SimpleImputer(), SimpleImputer(strategy='median')])
 
 rf = Space(RandomForestClassifier, name='RandomForest')
 rf.Integer('n_estimators', low=10, high=1000, distribution='exponential-decay')
@@ -48,9 +48,6 @@ et.Real('min_impurity_decrease', low=0.0001, high=1, distribution='log-uniform')
 ##################
 gams = PyGAMS(models=[rf, et], pipes=pipes, generations=40, survivors=5, population_size=20)
 model_selection = gams.run(x, y, n_jobs=20, verbose=True)
-
-parameter = 'ExtraTrees x FeaturePipeline | features'
-gams.plot_parameter(parameter)
 
 ################
 # View Results #
@@ -79,5 +76,6 @@ for parameter in gams.distribution_options():
         gams.plot_parameter(parameter)
 
 
-gams.plot_parameter(param='ExtraTrees x FeaturePipeline | features',
-                    categories_to_examine=['feature_55', 'feature_67', 'feature_72', 'feature_61', 'feature_8'])
+gams.plot_parameter(param=f'{model_selection[0]["model_species"]} x {model_selection[0]["pipe_species"]} | features',
+                    categories_to_examine=model_selection[0]['pipe_params']['features'][0:5])
+
