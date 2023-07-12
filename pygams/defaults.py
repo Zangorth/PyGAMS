@@ -1,3 +1,4 @@
+from sklearn.metrics import roc_auc_score
 import pandas as pd
 
 #############
@@ -59,3 +60,9 @@ class FeaturePipeline():
         output = pd.DataFrame(self.scaler.transform(output), columns=df.columns)
 
         return output
+    
+#########
+# AUROC #
+#########
+def auroc(y_test, y_pred):
+    return roc_auc_score(y_test, y_pred[:, 1])

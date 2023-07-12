@@ -77,7 +77,7 @@ def assess_fitness(x, y, pipe, pipe_params, model, model_params,
         fit_model = model(**model_params)
         fit_model.fit(x_train, y_train)
          
-        predictions = (fit_model.predict_proba(x_test)[:, 1] if proba else
+        predictions = (fit_model.predict_proba(x_test) if proba else
                        fit_model.predict(x_test))
         
         fitness.append(metric(y_test, predictions))

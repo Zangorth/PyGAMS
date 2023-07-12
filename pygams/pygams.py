@@ -5,9 +5,8 @@ from pygams.helpers import space_converter, speciation, kwarg_gen, param_counter
 from pygams.populations import population_generator, population_to_df
 from pygams.mate import choose_parents, rescuer, breed
 from sklearn.model_selection import ShuffleSplit
-from sklearn.metrics import roc_auc_score
+from pygams.defaults import PassPipe, auroc
 from pygams.fitness import assess_fitness
-from pygams.defaults import PassPipe
 from matplotlib import pyplot as plt
 from multiprocessing import Pool
 from pygams.space import Space
@@ -19,7 +18,7 @@ import numpy as np
 # PyGAMS #
 ##########
 class PyGAMS():
-    def __init__(self, models, pipes=None, metric=roc_auc_score, cv=ShuffleSplit, 
+    def __init__(self, models, pipes=None, metric=auroc, cv=ShuffleSplit, 
                  generations=100, population_size=100, survivors=10, mutation_rate=0.1):
         '''
         Description - Class of functions uses a genetic algorithm to select the optimal model specification

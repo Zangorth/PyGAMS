@@ -15,11 +15,15 @@ import numpy as np
 #################
 # Generate Data #
 #################
-x, y = make_classification(n_samples=1000, n_features=100, n_informative=10)
+x, y = make_classification(n_samples=1000, n_features=12, n_informative=10)
+noise, _ = make_classification(n_samples=1000, n_features=190, n_informative=5)
 
 panda = pd.DataFrame(y, columns=['y'])
-panda = panda.merge(pd.DataFrame(x, columns=[f'feature_{i}' for i in range(x.shape[1])]),
+panda = panda.merge(pd.DataFrame(x, columns=[f'important_feature_{i}' for i in range(x.shape[1])]),
                     how='outer', left_index=True, right_index=True)
+panda = panda.merge(pd.DataFrame(noise, columns=[f'unimportant_feature_{i}' for i in range(noise.shape[1])]),
+                    how='outer', left_index=True, right_index=True)
+
 
 x = panda.drop('y', axis=1).copy()
 y = panda['y']

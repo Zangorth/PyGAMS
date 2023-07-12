@@ -6,27 +6,6 @@ from pygams.space import Space
 import pandas as pd
 import pygams
 
-#############
-# Pass Pipe #
-#############
-class PassPipe():
-    def __init__(self):
-        '''
-        Description default pipeline that returns the same dataframe it was given
-
-        Returns
-        -------
-        None.
-
-        '''
-        return None
-    
-    def fit(self):
-        return None
-    
-    def transform(x: pd.DataFrame):
-        return x
-
 ######################
 # Convert Space Type #
 ######################
