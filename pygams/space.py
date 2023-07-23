@@ -48,7 +48,7 @@ class Space():
             The upper bound of the search space
         distribution : TYPE, optional
             The method of drawing samples from the search space
-            options include 'uniform', 'log-uniform', and 'exponential-decay'
+            options include 'uniform', 'log-uniform', 'exponential-decay', and 'exponential-growth'
 
         Returns
         -------
@@ -66,6 +66,10 @@ class Space():
         elif distribution == 'exponential-decay':
             def generator():
                 return rng.exp_int(low, high)
+            
+        elif distribution == 'exponential-growth':
+            def generator():
+                return rng.exp_int(low, high, decay=False)
         
         self.types[parameter] = int
         self.generators[parameter] = generator
@@ -87,7 +91,7 @@ class Space():
             The upper bound of the search space
         distribution : TYPE, optional
             The method of drawing samples from the search space
-            options include 'uniform', 'log-uniform', and 'exponential-decay'
+            options include 'uniform', 'log-uniform', 'exponential-decay', and 'exponential-growth'
 
         Returns
         -------
@@ -105,6 +109,10 @@ class Space():
         elif distribution == 'exponential-decay':
             def generator():
                 return rng.exp_real(low, high)
+        
+        elif distribution == 'exponential-growth':
+            def generator():
+                return rng.exp_real(low, high, decay=False)
         
         self.types[parameter] = float
         self.generators[parameter] = generator
