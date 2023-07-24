@@ -50,7 +50,7 @@ et.Real('min_impurity_decrease', low=0.0001, high=1, distribution='log-uniform')
 ##################
 # Optimize Model #
 ##################
-gams = PyGAMS(models=[rf, et], pipes=pipes, generations=40, survivors=5, population_size=20)
+gams = PyGAMS(models=[rf, et], pipes=pipes, generations=40, survivors=5, population_size=100)
 model_selection = gams.run(x, y, n_jobs=20, verbose=True)
 
 ################
@@ -78,8 +78,17 @@ for parameter in gams.distribution_options():
     print(parameter)
     if 'features' not in parameter:
         gams.plot_parameter(parameter)
+        plt.close()
+
+        gams.plot_impact()
+        plt.close()
 
 
 gams.plot_parameter(param=f'{model_selection[0]["model_species"]} x {model_selection[0]["pipe_species"]} | features',
                     categories_to_examine=model_selection[0]['pipe_params']['features'][0:5])
 
+gams.plot_impact(param=f'{model_selection[0]["model_species"]} x {model_selection[0]["pipe_species"]} | features',
+                 categories_to_examine=model_selection[0]['pipe_params']['features'][0:5], generation=True)
+
+gams.plot_impact(param=f'{model_selection[0]["model_species"]} x {model_selection[0]["pipe_species"]} | features',
+                 categories_to_examine=model_selection[0]['pipe_params']['features'][0:5], generation=False, ylim=(0.8, 1.2))

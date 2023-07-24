@@ -1,3 +1,4 @@
+from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
 import pandas as pd
 
@@ -66,3 +67,9 @@ class FeaturePipeline():
 #########
 def auroc(y_test, y_pred):
     return roc_auc_score(y_test, y_pred[:, 1])
+
+##############
+# CV Wrapper #
+##############
+def cv_wrapper():
+    return ShuffleSplit(n_splits=1)

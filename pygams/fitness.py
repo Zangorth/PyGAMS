@@ -1,8 +1,8 @@
 ###########
 # Imports #
 ###########
-from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import roc_auc_score
+from pygams.defaults import cv_wrapper
 import pandas as pd
 import numpy as np
 
@@ -19,7 +19,7 @@ def split_idx(x, y, idx):
 # Assess Fitness #
 ##################
 def assess_fitness(x, y, pipe, pipe_params, model, model_params,
-                   metric=roc_auc_score, cv=ShuffleSplit, proba=True):
+                   metric=roc_auc_score, cv=cv_wrapper, proba=True):
     '''
     Description - Assess the fitness of a provided model using the provided metric
 
