@@ -18,7 +18,7 @@ def lu_int(low, high):
 # Exponential Integer #
 #######################
 def exp_int(low, high, decay=True):
-    if high > low:
+    if high <= low:
         print('Error:\nHigher bound must be greater than Lower bound\n')
         return None
 
@@ -39,7 +39,7 @@ def exp_int(low, high, decay=True):
 # Exponential Real #
 ####################
 def exp_real(low, high, decay=True):
-    if high > low:
+    if high <= low:
         print('Error:\nHigher bound must be greater than Lower bound\n')
         return None
     

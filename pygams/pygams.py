@@ -211,7 +211,7 @@ class PyGAMS():
         categories_to_examine : list
             When the param is a list of categories, select which categories you wish to see plotted
             More category selections will lead to a busier plot, so try to keep the list small
-            If categories to examine is None, the top 10 most frequent categories will be selected automatically
+            If categories to examine is None, the top 5 most frequent categories will be selected automatically
         title : str, optional
             The title of the graph to be used. 
             The default is None, which equates to Distribution Of {param} By Generation.
@@ -225,14 +225,16 @@ class PyGAMS():
         '''
         sea.set(style='whitegrid', rc={'figure.dpi': 300})
         
-        pt = self.population_tracker.copy().reset_index(drop=True)
+        pt = self.population_tracker.copy()
+        pt = pt.loc[pt[param].notnull()].reset_index(drop=True)
         
         param_type = (list if type(pt[param].dropna().iloc[0]) == np.ndarray else
                       float if str(pt[param].dropna().iloc[0]).replace('.', '', 1).isnumeric()
                       else str)
         
         if param_type is str:
-            size = pt.loc[pt[param].notnull()].groupby([param, 'generation']).size().rename('count').reset_index()
+            pt[param] = pt[param].astype(str)
+            size = pt.groupby([param, 'generation']).size().rename('count').reset_index()
             size['percent'] = size['count'] / size.groupby('generation')['count'].transform('sum')
             
             if title is None:
@@ -242,7 +244,7 @@ class PyGAMS():
                 ylim = (-0.01, 1.01)
             
             fig, ax = plt.subplots(figsize=(16, 9))
-            sea.lineplot(x='generation', y='percent', hue=param, data=size)
+            sea.lineplot(x='generation', y='percent', hue=param, data=size, ax=ax)
             ax.set_title(title)
             ax.set_ylim(ylim)
             ax.set_ylabel('Percentage')
@@ -263,8 +265,7 @@ class PyGAMS():
                 ylim = (bot, top)
             
             fig, ax = plt.subplots(figsize=(16, 9))
-            sea.scatterplot(x='generation', y='mean', data=avg,
-                            ax=ax)
+            sea.scatterplot(x='generation', y='mean', data=avg, ax=ax)
             ax.errorbar(x=avg['generation'], y=avg['mean'], yerr=1.96*avg['sem'],
                         color='black', ls='')
             ax.set_title(title)
@@ -275,13 +276,12 @@ class PyGAMS():
 
         else:
             if categories_to_examine is None:
-                param_counts = param_counter(pt.loc[pt[param].notnull(), param])
-
-                categories_to_examine = list(param_counts.index[0:10])
+                param_counts = param_counter(pt[param])
+                categories_to_examine = list(param_counts.index[0:5])
 
             count_frame = pd.DataFrame(columns=['generation', 'param', 'count'])
             for i in range(self.generations):
-                subset = pt.loc[(pt['generation'] == i) & (pt[param].notnull()), param]
+                subset = pt.loc[pt['generation'] == i, param]
                 
                 if len(subset) > 0:
                     gen_counts = param_counter(subset)
@@ -293,13 +293,101 @@ class PyGAMS():
                     count_frame = pd.concat([count_frame, gen_counts])
 
             fig, ax = plt.subplots(figsize=(16, 9))
-            sea.lineplot(x='generation', y='count', hue='param', data=count_frame)
+            sea.lineplot(x='generation', y='count', hue='param', data=count_frame, ax=ax)
             ax.set_title(title)
             ax.set_ylabel('Frequency Percent')
             ax.set_ylim(ylim)
 
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=5, fancybox=True, shadow=True)
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, fancybox=True, shadow=True)
 
             fig.show()
         
         return fig
+    
+    def plot_impact(self, param: str, generation=False, categories_to_examine=None, title=None, ylim=None):
+        sea.set(style='whitegrid', rc={'figure.dpi': 300})
+        
+        pt = self.population_tracker.copy()
+        pt = pt.loc[pt[param].notnull()].reset_index(drop=True)
+        
+        param_type = (list if type(pt[param].dropna().iloc[0]) == np.ndarray else
+                      float if str(pt[param].dropna().iloc[0]).replace('.', '', 1).isnumeric()
+                      else str)
+        
+        if param_type is str:
+            pt[param] = pt[param].astype(str)
+            
+            fig, ax = plt.subplots(figsize=(16, 9))
+            
+            if generation:
+                means = pt.groupby([param, 'generation'])['fitness'].mean().reset_index()
+                sea.lineplot(x='generation', y='mean', hue=param, data=means, ax=ax)
+            else:
+                means = pt.groupby([param])['fitness'].agg(['mean', 'sem']).reset_index()
+                sea.lineplot(x=param, y='mean', data=means, ax=ax)
+
+            ax.set_title(title)
+            ax.set_ylabel(f'Average of {self.metric.__name__}')
+            ax.set_ylim(ylim)
+
+            fig.show()
+
+        elif param_type is float:
+            fig, ax = plt.subplots(figsize=(16, 9))
+
+            if generation:
+                sea.scatterplot(x=param, y='fitness', hue='generation', data=pt, ax=ax)
+            
+            ax.set_title(title)
+            ax.set_ylabel(f'Average of {self.metric.__name__}')
+            ax.set_ylim(ylim)
+
+            fig.show()
+
+        else:
+            if categories_to_examine is None:
+                param_counts = param_counter(pt[param])
+                categories_to_examine = list(param_counts.index[0:5])
+
+            means = pd.DataFrame()
+            for category in categories_to_examine:
+                pt[category] = [1 if category in list(pt[param][i]) else 0 for i in range(len(pt))]
+
+                if generation:
+                    temp = pt.groupby([category, 'generation'])['fitness'].mean().reset_index()
+                    temp.columns = ['indicator', 'generation', 'fitness']
+                    temp['category'] = category
+
+                    ratio = temp.loc[temp['indicator'] == 1, 'fitness'].reset_index(drop=True) / temp.loc[temp['indicator'] == 0, 'fitness'].reset_index(drop=True)
+                    
+                    temp = temp.loc[temp['indicator'] == 1].reset_index()
+                    temp['fitness'] = ratio
+
+                    means = pd.concat([means, temp], axis=0)
+
+                else:
+                    temp = pt.groupby([category])['fitness'].mean().reset_index()
+                    temp.columns = ['indicator', 'fitness']
+                    temp['category'] = category
+
+                    ratio = temp.loc[temp['indicator'] == 1, 'fitness'].reset_index(drop=True) / temp.loc[temp['indicator'] == 0, 'fitness'].reset_index(drop=True)
+
+                    temp = temp.loc[temp['indicator'] == 1].reset_index()
+                    temp['fitness'] = ratio
+
+                    means = pd.concat([means, temp], axis=0)
+            
+            fig, ax = plt.subplots(figsize=(16, 9))
+            if generation:
+                sea.lineplot(x='generation', y='fitness', hue='category', data=means, ax=ax)
+            else:
+                sea.barplot(x='category', y='fitness', data=means, ax=ax)
+
+            ax.set_title(title)
+            ax.set_ylabel(f'Average of {self.metric.__name__}')
+            ax.set_ylim(ylim)
+            plt.xticks(rotation=90)
+
+            fig.show()
+
+        return None
