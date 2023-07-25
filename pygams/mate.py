@@ -56,9 +56,15 @@ def select_p(df: pd.DataFrame, fit_col='fitness'):
         Series of values indicating the probability that the creature will be selected to mate
 
     '''
-    normalized_fitness = MinMaxScaler().fit_transform(df[fit_col].to_numpy().reshape(-1, 1))
-    p = normalized_fitness / normalized_fitness.sum()
     
+    normalized_fitness = MinMaxScaler().fit_transform(df[fit_col].to_numpy().reshape(-1, 1))
+    
+    if normalized_fitness.sum() == 0:
+        p = np.array([1/len(df)]*len(df)).reshape(-1, 1)
+    
+    else:
+        p = normalized_fitness / normalized_fitness.sum()
+       
     return p
 
 #################
