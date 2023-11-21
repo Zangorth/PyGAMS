@@ -337,6 +337,9 @@ class PyGAMS():
 
             if generation:
                 sea.scatterplot(x=param, y='fitness', hue='generation', data=pt, ax=ax)
+
+            else:
+                sea.scatterplot(x=param, y='fitness', data=pt, ax=ax)
             
             ax.set_title(title)
             ax.set_ylabel(f'Average of {self.metric.__name__}')
@@ -390,4 +393,5 @@ class PyGAMS():
 
             fig.show()
 
-        return None
+        return fig
+    
