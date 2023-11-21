@@ -17,10 +17,10 @@ class PassPipe():
         '''
         return None
     
-    def fit(self):
+    def fit(self, x):
         return None
     
-    def transform(x: pd.DataFrame):
+    def transform(self, x: pd.DataFrame):
         return x
 
 ####################
